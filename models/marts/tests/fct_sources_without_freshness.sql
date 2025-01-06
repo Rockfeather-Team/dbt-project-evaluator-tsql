@@ -2,7 +2,7 @@ with
 
 all_resources as (
     select * from {{ ref('int_all_graph_resources') }}
-    where not is_excluded
+    where is_excluded = 0
 
 ),
 
@@ -12,7 +12,7 @@ final as (
         resource_name
 
     from all_resources
-    where not is_freshness_enabled and resource_type = 'source'
+    where is_freshness_enabled = 0 and resource_type = 'source'
 
 )
 

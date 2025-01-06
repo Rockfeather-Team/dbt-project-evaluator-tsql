@@ -25,7 +25,7 @@
                   [
                     "cast('" ~ node.unique_id ~ "' as " ~ dbt_project_evaluator.type_string_dpe() ~ ")",
                     "cast(NULL as " ~ dbt_project_evaluator.type_string_dpe() ~ ")",
-                    "FALSE",
+                    0,
                   ] 
                 %}
                   
@@ -39,9 +39,9 @@
                         [
                             "cast('" ~ node.unique_id ~ "' as " ~ dbt_project_evaluator.type_string_dpe() ~ ")",
                             "cast('" ~ parent ~ "' as " ~ dbt_project_evaluator.type_string_dpe() ~ ")",
-                            "" ~ loop.last ~ "" if node.unique_id.split('.')[0] == 'test' else "FALSE"
+                            "" ~ convert_boolean_value(loop.last) ~ "" if node.unique_id.split('.')[0] == 'test' else 0
                         ]
-                    %}
+                    %} 
                       
                     {%- do values.append(values_line) -%}
 

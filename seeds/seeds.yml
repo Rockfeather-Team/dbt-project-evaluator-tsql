@@ -6,10 +6,10 @@ seeds:
 
     config:
       column_types:
-        fct_name: "{{ 'varchar' if target.type in ['redshift', 'postgres', 'snowflake', 'trino', 'greenplum'] else 'String' if target.type in ['clickhouse'] else 'string' }}"
-        column_name: "{{ 'varchar' if target.type in ['redshift', 'postgres', 'snowflake', 'trino', 'greenplum'] else 'String' if target.type in ['clickhouse'] else 'string' }}"
-        id_to_exclude: "{{ 'varchar' if target.type in ['redshift', 'postgres', 'snowflake', 'trino', 'greenplum'] else 'String' if target.type in ['clickhouse'] else 'string' }}"
-        comment: "{{ 'varchar' if target.type in ['redshift', 'postgres', 'snowflake', 'trino', 'greenplum'] else 'String' if target.type in ['clickhouse'] else 'string' }}"
+        fct_name: "NVARCHAR(MAX)"
+        column_name: "NVARCHAR(MAX)"
+        id_to_exclude: "NVARCHAR(MAX)"
+        comment: "NVARCHAR(MAX)"
 
     columns:
       - name: fct_name

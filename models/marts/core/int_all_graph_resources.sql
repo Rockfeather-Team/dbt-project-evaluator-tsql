@@ -1,4 +1,8 @@
+{{ config(alias='int_all_graph_resources') }}
+
+
 -- one row for each resource in the graph
+
 
 {# flatten the sets of permissable primary key test sets to one level for later iteration #}
 {%- set test_macro_list = [] %}
@@ -50,9 +54,9 @@ unioned_with_calc as (
             else {{ dbt.split_part('name', "'_'", 1) }}||'_' 
         end as prefix,
         {{ get_dbtreplace_directory_pattern() }} as directory_path,
-        regexp_replace(file_path,'.*{{ get_regexp_directory_pattern() }}','') as file_name
+        REPLACE(file_path,{{ get_dbtreplace_directory_pattern() }},'') as file_name
     from unioned
-    where coalesce(is_enabled, True) = True and package_name != 'dbt_project_evaluator'
+    where coalesce(is_enabled, 1) = 1 and package_name != 'dbt_project_evaluator'
 ), 
 
 joined as (
@@ -77,20 +81,27 @@ joined as (
         end as model_type_folder,
         {{ dbt.position(dbt.concat([quoted_directory_pattern, 'naming_convention_folders.folder_name_value', quoted_directory_pattern]),'unioned_with_calc.directory_path') }} as position_folder,  
         nullif(unioned_with_calc.column_name, '') as column_name,
+
         {% for test in test_macro_set %}
-        unioned_with_calc.macro_dependencies like '%macro.{{ test }}%' and unioned_with_calc.resource_type = 'test' as is_{{ test.split('.')[1] }},  
+
+        CASE 
+            WHEN unioned_with_calc.resource_type = 'test' AND unioned_with_calc.macro_dependencies LIKE '%macro.{{ test }}%' 
+            THEN 1 ELSE 0 
+        END as is_{{ test.split('.')[1] }},
+
         {% endfor %}
+
         unioned_with_calc.is_enabled, 
         unioned_with_calc.materialized, 
         unioned_with_calc.on_schema_change, 
-        unioned_with_calc.database, 
-        unioned_with_calc.schema, 
+        unioned_with_calc.database_name, 
+        unioned_with_calc.schema_name, 
         unioned_with_calc.package_name, 
         unioned_with_calc.alias, 
         unioned_with_calc.is_described, 
         unioned_with_calc.model_group, 
         unioned_with_calc.access, 
-        unioned_with_calc.access = 'public' as is_public, 
+        CASE WHEN unioned_with_calc.access = 'public' THEN 1 ELSE 0 END as is_public,
         unioned_with_calc.latest_version, 
         unioned_with_calc.version, 
         unioned_with_calc.deprecation_date, 

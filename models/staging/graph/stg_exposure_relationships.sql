@@ -1,3 +1,6 @@
+{{ config(alias='stg_exposure_relationships') }}
+
+
 with 
 
 _base_exposure_relationships as (

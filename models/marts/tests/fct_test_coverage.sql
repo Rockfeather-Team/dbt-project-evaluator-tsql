@@ -36,7 +36,7 @@ final as (
 
     from test_counts
     left join conversion
-    on test_counts.resource_name = conversion.resource_name
+        on test_counts.resource_name = conversion.resource_name
 )
 
 select * from final

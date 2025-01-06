@@ -1,3 +1,6 @@
+{{ config(alias='stg_metric_relationships') }}
+
+
 with 
 
 _base_metric_relationships as (

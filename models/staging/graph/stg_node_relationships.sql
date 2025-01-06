@@ -1,3 +1,6 @@
+{{ config(alias='stg_node_relationships') }}
+
+
 with 
 
 _base_node_relationships as (

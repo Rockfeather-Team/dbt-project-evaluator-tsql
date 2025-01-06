@@ -2,7 +2,7 @@ with
 
 all_graph_resources as (
     select * from {{ ref('int_all_graph_resources') }}
-    where not is_excluded
+    where is_excluded = 0
 ),
 
 relationships as (
@@ -15,7 +15,7 @@ count_column_tests as (
         relationships.direct_parent_id, 
         all_graph_resources.column_name,
         sum(case
-                when all_graph_resources.is_test_unique
+                when all_graph_resources.is_test_unique = 1
                 then 1
                 else 0
             end
@@ -24,7 +24,7 @@ count_column_tests as (
             {%- set outer_loop = loop -%}
         count(distinct case when 
                 {%- for test in test_set %} 
-                all_graph_resources.is_{{ test.split('.')[1] }} {%- if not loop.last %} or {% endif %} 
+                all_graph_resources.is_{{ test.split('.')[1] }} = 1 {%- if not loop.last %} or {% endif %} 
                 {%- endfor %}
             then relationships.resource_id else null end
         ) as primary_key_method_{{ outer_loop.index }}_count,
@@ -34,8 +34,10 @@ count_column_tests as (
     left join relationships
         on all_graph_resources.resource_id = relationships.resource_id
     where all_graph_resources.resource_type = 'test'
-    and relationships.is_primary_test_relationship
-    group by 1,2
+        and relationships.is_primary_test_relationship = 1
+    group by 
+        relationships.direct_parent_id, 
+        all_graph_resources.column_name
 ),
 
 count_column_constraints as (
@@ -44,7 +46,7 @@ count_column_constraints as (
         node_unique_id as direct_parent_id,
         name as column_name,
         case
-            when has_not_null_constraint
+            when has_not_null_constraint = 1
             then 1
             else 0
         end as constraint_not_null_count,
@@ -70,22 +72,28 @@ agg_test_relationships as (
 
     select 
         direct_parent_id, 
-        cast(sum(case 
-                when (
-                    {%- for test_set in var('primary_key_test_macros') %}
-                        {%- set compare_value = test_set | length %}
-                    primary_key_method_{{ loop.index }}_count >= {{ compare_value}}
-                        or
-                    {%- endfor %}
-                    primary_key_mixed_method_count >= 2
-                ) then 1 
-                else 0 
-            end
-        ) >= 1 as {{ dbt.type_boolean() }}) as is_primary_key_tested,
+        cast(
+            (CASE
+                WHEN
+                    sum(
+                        case 
+                            when (
+                                {%- for test_set in var('primary_key_test_macros') %}
+                                    {%- set compare_value = test_set | length %}
+                                primary_key_method_{{ loop.index }}_count >= {{ compare_value}}
+                                    or
+                                {%- endfor %}
+                                primary_key_mixed_method_count >= 2
+                            ) then 1 
+                            else 0 
+                        end
+                    ) >= 1 then 1
+                else 0
+            end) as {{ dbt.type_boolean() }}) as is_primary_key_tested,
         cast(sum(tests_count) as {{ dbt.type_int()}}) as number_of_tests_on_model,
         cast(sum(constraints_count) as {{ dbt.type_int()}}) as number_of_constraints_on_model
     from combine_column_counts
-    group by 1
+    group by direct_parent_id
 
 ),
 
@@ -94,7 +102,7 @@ final as (
         all_graph_resources.resource_name,
         all_graph_resources.resource_type,
         all_graph_resources.model_type,
-        cast(coalesce(agg_test_relationships.is_primary_key_tested, FALSE) as {{ dbt.type_boolean()}}) as is_primary_key_tested,
+        cast(coalesce(agg_test_relationships.is_primary_key_tested, 0) as {{ dbt.type_boolean()}}) as is_primary_key_tested,
         cast(coalesce(agg_test_relationships.number_of_tests_on_model, 0) as {{ dbt.type_int()}}) as number_of_tests_on_model,
         cast(coalesce(agg_test_relationships.number_of_constraints_on_model, 0) as {{ dbt.type_int()}}) as number_of_constraints_on_model
     from all_graph_resources

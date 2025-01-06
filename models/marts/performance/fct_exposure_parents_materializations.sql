@@ -1,6 +1,4 @@
-with 
-
-direct_exposure_relationships as (
+with direct_exposure_relationships as (
     select * from {{ ref('int_all_dag_relationships') }}
     where 
         distance = 1
@@ -14,7 +12,7 @@ direct_exposure_relationships as (
             )
         )
         -- no test on child_is_excluded because exposures are never excluded
-        and not parent_is_excluded
+        and parent_is_excluded = 0
 ),
 
 final as (

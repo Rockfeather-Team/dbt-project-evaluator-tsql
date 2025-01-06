@@ -1,6 +1,4 @@
-with
-
-tests as (
+with tests as (
     select * from {{ ref('int_model_test_summary') }}
     where resource_type in
     (
@@ -19,7 +17,7 @@ final as (
         number_of_tests_on_model,
         number_of_constraints_on_model
     from tests
-    where not(is_primary_key_tested)
+    where is_primary_key_tested = 0
 
 )
 

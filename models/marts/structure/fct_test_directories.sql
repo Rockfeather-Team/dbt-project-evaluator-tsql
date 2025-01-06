@@ -4,7 +4,7 @@ with
 resources as (
 
     select * from {{ ref('int_all_graph_resources') }}
-    where not is_excluded
+    where is_excluded = 0
 
 ),
 
@@ -22,7 +22,7 @@ models_per_test as (
         direct_parent_id as parent_model_id
     from relationships
     where resource_type = 'test'
-    and is_primary_test_relationship
+    and is_primary_test_relationship = 1
 
 ),
 
@@ -36,7 +36,7 @@ model_file_paths as (
         models_per_test.parent_model_id
     from resources
     inner join models_per_test
-    on models_per_test.parent_model_id = resources.resource_id
+        on models_per_test.parent_model_id = resources.resource_id
     where resource_type = 'model'
 
 ),
@@ -51,7 +51,7 @@ test_file_paths as (
     from resources
     where 
         resource_type = 'test'
-        and is_generic_test
+        and is_generic_test = 1
 
 ),
 
@@ -67,7 +67,7 @@ all_file_paths as (
         model_file_paths.model_directory_path
     from model_file_paths
     inner join test_file_paths
-    on model_file_paths.test_id = test_file_paths.test_id
+        on model_file_paths.test_id = test_file_paths.test_id
 
 ),
 

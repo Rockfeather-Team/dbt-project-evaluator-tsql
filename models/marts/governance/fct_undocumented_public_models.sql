@@ -2,7 +2,7 @@ with
 
 all_resources as (
     select * from {{ ref('int_all_graph_resources') }}
-    where not is_excluded
+    where is_excluded = 0
 ),
 
 final as (
@@ -15,10 +15,10 @@ final as (
     
     from all_resources
     where 
-        is_public 
+        is_public = 1
         and (
             -- no model level description
-            not is_described
+            is_described = 0
             -- not all columns defined have descriptions
             or total_described_columns < total_defined_columns
             -- no columns defined at all

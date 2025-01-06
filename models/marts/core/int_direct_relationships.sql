@@ -1,3 +1,6 @@
+{{ config(alias='int_direct_relationships') }}
+
+
 -- one record for each resource in the graph and its direct parent
 with 
 
@@ -64,10 +67,11 @@ direct_relationships as (
             when all_graph_resources.resource_type in ('model', 'snapshot', 'test') then models.direct_parent_id
             else null
         end as direct_parent_id,
-        (
-            all_graph_resources.resource_type = 'test'
-            and models.is_primary_relationship
-        ) as is_primary_test_relationship
+        CASE 
+            WHEN all_graph_resources.resource_type = 'test' 
+                AND models.is_primary_relationship = 1 THEN 1
+            ELSE 0
+        END AS is_primary_test_relationship
     from all_graph_resources
     left join direct_model_relationships as models
         on all_graph_resources.resource_id = models.resource_id

@@ -24,11 +24,18 @@
  
 {% macro get_dbtreplace_directory_pattern() %}
   {% if execute %}
+    {%- set is_sql_server = target.type == "sqlserver" -%}
     {%- set on_mac_or_linux = dbt_project_evaluator.is_os_mac_or_linux() -%}
-    {%- if on_mac_or_linux -%}
+     
+    {%- if is_sql_server -%}
+      -- Logic for SQL Server
+      {{ dbt.replace("file_path", "RIGHT(file_path, CHARINDEX('\\', REVERSE(file_path)) - 1)", "''") }}
+    {%- elif on_mac_or_linux -%}
+      -- Logic for Mac or Linux
       {{ dbt.replace("file_path", "regexp_replace(file_path,'.*/','')", "''") }}
-    {% else %}
+    {%- else -%}
+      -- Logic for Windows
       {{ dbt.replace("file_path", "regexp_replace(file_path,'.*\\\\\\\\','')", "''") }}
-    {% endif %}
+    {%- endif -%}
   {% endif %}
-{% endmacro %} 
+{% endmacro %}

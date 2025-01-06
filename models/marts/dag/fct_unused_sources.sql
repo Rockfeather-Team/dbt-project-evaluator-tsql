@@ -5,15 +5,15 @@ with source_relationships as (
         *
     from {{ ref('int_all_dag_relationships') }}
     where parent_resource_type = 'source'
-    and not parent_is_excluded
-    and not child_is_excluded
+    and parent_is_excluded = 0
+    and child_is_excluded = 0
 ),
 
 final as (
     select
         parent
     from source_relationships
-    group by 1
+    group by parent
     having max(distance) = 0
 )
 

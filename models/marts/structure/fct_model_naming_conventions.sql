@@ -3,25 +3,19 @@
 
 with all_graph_resources as (
     select * from {{ ref('int_all_graph_resources') }}
-    where not is_excluded
+    where is_excluded = 0
     -- exclude required metricflow time spine
     and resource_name != 'metricflow_time_spine'
 ),
 
 naming_convention_prefixes as (
     select * from {{ ref('stg_naming_convention_prefixes') }}
-    -- we order the CTE so that listagg returns values correctly sorted for some warehouses
-    order by prefix_value
 ), 
 
 appropriate_prefixes as (
     select 
         model_type, 
-        {{ dbt.listagg(
-            measure='prefix_value', 
-            delimiter_text="', '", 
-            order_by_clause='order by prefix_value' if target.type in ['snowflake','redshift','duckdb','trino'])
-        }} as appropriate_prefixes
+        STRING_AGG(prefix_value, ', ') WITHIN GROUP (ORDER BY prefix_value) AS appropriate_prefixes
     from naming_convention_prefixes
     group by model_type
 ), 
@@ -49,7 +43,6 @@ inappropriate_model_names as (
     left join appropriate_prefixes
         on models.model_type = appropriate_prefixes.model_type
     where nullif(models.prefix_value, '') is null
-
 )
 
 select * from inappropriate_model_names

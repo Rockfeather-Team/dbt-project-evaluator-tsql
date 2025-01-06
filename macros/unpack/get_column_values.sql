@@ -25,14 +25,14 @@
                         wrap_string_with_quotes(dbt.escape_single_quotes(column.description)),
                         wrap_string_with_quotes(dbt.escape_single_quotes(column.data_type)),
                         wrap_string_with_quotes(dbt.escape_single_quotes(tojson(column.constraints))),
-                        column.constraints | selectattr('type', 'equalto', 'not_null') | list | length > 0,
+                        convert_boolean_value(column.constraints | selectattr('type', 'equalto', 'not_null') | list | length > 0),
                         column.constraints | length,
                         wrap_string_with_quotes(dbt.escape_single_quotes(column.quote))
                     ]
                 %}
 
                 {%- do values.append(values_line) -%}
-
+                
             {%- endfor -%}
         {%- endfor -%}
     {{ return(values) }}

@@ -3,8 +3,8 @@ with all_relationships as (
         *
     from {{ ref('int_all_dag_relationships') }}
     where distance <> 0
-    and not parent_is_excluded
-    and not child_is_excluded
+    and parent_is_excluded = 0
+    and child_is_excluded = 0
 ),
 
 final as (
@@ -14,7 +14,7 @@ final as (
         distance,
         path
     from all_relationships
-    where is_dependent_on_chain_of_views
+    where is_dependent_on_chain_of_views = 1
     and child_resource_type = 'model'
     and distance > {{ var('chained_views_threshold') }}
 )
@@ -22,5 +22,3 @@ final as (
 select * from final
 
 {{ filter_exceptions() }}
-
-order by distance desc

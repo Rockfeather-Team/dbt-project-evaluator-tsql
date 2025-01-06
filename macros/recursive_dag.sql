@@ -4,7 +4,7 @@
 
 {% macro default__recursive_dag() %}
 
-with recursive direct_relationships as (
+with direct_relationships as (
     select
         *
     from {{ ref('int_direct_relationships') }}
@@ -71,8 +71,8 @@ all_relationships (
         file_name as child_file_name,
         is_excluded as child_is_excluded,
         0 as distance,
-        {{ dbt.array_construct(['resource_name']) }} as path,
-        cast(null as {{ dbt.type_boolean() }}) as is_dependent_on_chain_of_views
+        CAST(JSON_QUERY('["' + resource_name + '"]') AS NVARCHAR(MAX)) AS path, -- Ensure consistent type for JSON
+        CAST(0 AS BIT) AS is_dependent_on_chain_of_views -- Initialize as BIT
 
     from direct_relationships
     -- where direct_parent_id is null {# optional lever to change filtering of anchor clause to only include root resources #}
@@ -106,13 +106,13 @@ all_relationships (
         direct_relationships.file_name as child_file_name,
         direct_relationships.is_excluded as child_is_excluded,
         all_relationships.distance+1 as distance,
-        {{ dbt.array_append('all_relationships.path', 'direct_relationships.resource_name') }} as path,
+        CAST(JSON_MODIFY(all_relationships.path, 'append $', direct_relationships.resource_name) AS NVARCHAR(MAX)) AS path,
         case
             when
                 all_relationships.child_materialized in ('view', 'ephemeral')
-                and coalesce(all_relationships.is_dependent_on_chain_of_views, true)
-                then true
-            else false
+                and coalesce(all_relationships.is_dependent_on_chain_of_views, 1) = 1
+                then CAST(1 AS BIT)
+            else CAST(0 AS BIT)
         end as is_dependent_on_chain_of_views
 
     from direct_relationships
@@ -194,9 +194,9 @@ with direct_relationships as (
         case
             when
                 cte_{{i - 1}}.child_materialized in ('view', 'ephemeral')
-                and coalesce(cte_{{i - 1}}.is_dependent_on_chain_of_views, true)
-                then true
-            else false
+                and coalesce(cte_{{i - 1}}.is_dependent_on_chain_of_views, 1)
+                then 1
+            else 0
         end as is_dependent_on_chain_of_views
 
         from direct_relationships
@@ -268,11 +268,13 @@ with direct_relationships as (
 
 
 {% macro trino__recursive_dag() %}
-{#-- Although Trino supports a recursive WITH-queries,
--- it is less performant than creating CTEs with loops and union them --#}
+{# Although Trino supports a recursive WITH-queries, it is less performant than creating CTEs with loops and union them #}
     {{ return(bigquery__recursive_dag()) }}
 {% endmacro %}
 
 {% macro athena__recursive_dag() %}
     {{ return(bigquery__recursive_dag()) }}
 {% endmacro %}
+
+
+

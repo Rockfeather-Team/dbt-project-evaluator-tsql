@@ -6,8 +6,8 @@ with direct_model_relationships as (
     from {{ ref('int_all_dag_relationships') }}
     where child_resource_type = 'model'
     and distance = 1
-    and not parent_is_excluded
-    and not child_is_excluded
+    and parent_is_excluded = 0
+    and child_is_excluded = 0
 ),
 
 model_and_source_joined as (
@@ -18,11 +18,11 @@ model_and_source_joined as (
                 sum(case when parent_resource_type = 'model' then 1 else 0 end) > 0 
                 and sum(case when parent_resource_type = 'source' then 1 else 0 end) > 0
             ) 
-            then true
-            else false 
+            then 1
+            else 0 
         end as keep_row 
     from direct_model_relationships
-    group by 1
+    group by child
 ),
 
 final as (
@@ -35,8 +35,7 @@ final as (
     from direct_model_relationships
     inner join model_and_source_joined
         on direct_model_relationships.child = model_and_source_joined.child
-    where model_and_source_joined.keep_row
-    order by direct_model_relationships.child
+    where model_and_source_joined.keep_row = 1
 )
 
 select * from final

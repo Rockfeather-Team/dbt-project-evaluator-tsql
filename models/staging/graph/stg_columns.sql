@@ -1,6 +1,7 @@
-with
+{{ config(alias='stg_columns') }}
 
-final as (
+
+with final as (
 
     {{ dbt_utils.union_relations([
         ref('base_node_columns'),

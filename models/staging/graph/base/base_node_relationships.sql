@@ -1,14 +1,15 @@
 {{
     config(
         materialized='table',
-        post_hook="{{ insert_resources_from_graph(this, resource_type='nodes', relationships=True) }}"
+        post_hook="{{ insert_resources_from_graph(this, resource_type='nodes', relationships=True) }}",
+        alias="base_node_relationships"
     )
 }}
 
 {% if execute %}
     {{ check_model_is_table(model) }}
 {% endif %}
-/* Bigquery won't let us `where` without `from` so we use this workaround */
+
 with dummy_cte as (
     select 1 as foo
 ) 
@@ -16,7 +17,8 @@ with dummy_cte as (
 select 
     cast(null as {{ dbt_project_evaluator.type_string_dpe()}}) as resource_id,
     cast(null as {{ dbt_project_evaluator.type_string_dpe()}}) as direct_parent_id,
-    cast(True as {{ dbt.type_boolean() }}) as is_primary_relationship
+    cast(1 as {{ dbt.type_boolean() }}) as is_primary_relationship
 
 from dummy_cte
-where false
+where 1=0
+

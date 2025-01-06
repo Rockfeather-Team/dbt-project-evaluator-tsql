@@ -6,22 +6,16 @@ with direct_source_relationships as (
     from {{ ref('int_all_dag_relationships') }}
     where distance = 1
     and parent_resource_type = 'source'
-    and not parent_is_excluded
-    and not child_is_excluded
-    -- we order the CTE so that listagg returns values correctly sorted for some warehouses
-    order by 1, 2
+    and parent_is_excluded = 0
+    and child_is_excluded = 0
 ),
 
 multiple_sources_joined as (
     select
         child,
-        {{ dbt.listagg(
-            measure='parent', 
-            delimiter_text="', '", 
-            order_by_clause='order by parent' if target.type in ['snowflake','redshift','duckdb','trino'])
-        }} as source_parents
+        STRING_AGG(parent, ', ') WITHIN GROUP (ORDER BY parent) AS source_parents
     from direct_source_relationships
-    group by 1
+    group by child
     having count(*) > 1
 )
 

@@ -5,7 +5,7 @@
  
 with all_graph_resources as (
     select * from {{ ref('int_all_graph_resources') }}
-    where not is_excluded
+    where is_excluded = 0
 ),
 
 folders as (
@@ -14,7 +14,7 @@ folders as (
 
 all_dag_relationships as (
     select * from {{ ref('int_all_dag_relationships') }}
-    where not child_is_excluded
+    where child_is_excluded = 0
 ),
 
 staging_models as (
@@ -28,8 +28,8 @@ staging_models as (
         parent_source_name
     from all_dag_relationships
     where parent_resource_type = 'source'
-    and child_resource_type = 'model'
-    and child_model_type = 'staging'
+        and child_resource_type = 'model'
+        and child_model_type = 'staging'
 ),
 
 -- find all staging models that are NOT in their source parent's subdirectory

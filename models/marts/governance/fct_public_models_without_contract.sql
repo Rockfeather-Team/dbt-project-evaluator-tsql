@@ -2,7 +2,7 @@ with
 
 all_resources as (
     select * from {{ ref('int_all_graph_resources') }}
-    where not is_excluded
+    where is_excluded = 0
 ),
 
 final as (
@@ -14,8 +14,8 @@ final as (
         
     from all_resources
     where 
-        is_public 
-        and not is_contract_enforced
+        is_public = 1
+        and is_contract_enforced = 0
 )
 
 select * from final

@@ -7,7 +7,7 @@ with model_relationships as (
     where child_resource_type = 'model'
     -- only filter out excluded children nodes
         -- filtering parents could result in incorrectly flagging nodes that depend on excluded nodes
-    and not child_is_excluded
+    and child_is_excluded = 0
     -- exclude required time spine
     and child != 'metricflow_time_spine'
 ),
@@ -16,7 +16,7 @@ final as (
     select
         child
     from model_relationships
-    group by 1
+    group by child
     having max(distance) = 0
 )
 
